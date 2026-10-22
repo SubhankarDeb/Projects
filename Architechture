@@ -1,10 +1,32 @@
-<!DOCTYPE html>
-<html lang="en">
+import os
+from flask import Flask, render_template_string, request, redirect, url_for, session, flash
+
+app = Flask(__name__)
+# Secret key used to encrypt session data cookies securely
+app.secret_key = "python_single_file_ecommerce_key_8842"
+
+# Mock Persistent Product Database Store
+PRODUCTS = {
+    1: {"name": "Wireless Noise-Canceling Headphones", "price": 4999.00, "category": "Electronics", "stock": 5},
+    2: {"name": "RGB Mechanical Gaming Keyboard", "price": 3499.00, "category": "Electronics", "stock": 8},
+    3: {"name": "Ergonomic Office Chair", "price": 12499.00, "category": "Furniture", "stock": 3},
+    4: {"name": "Stainless Steel Water Bottle", "price": 999.00, "category": "Lifestyle", "stock": 15},
+    5: {"name": "Minimalist Leather Wallet", "price": 1499.00, "category": "Fashion", "stock": 12}
+}
+
+# --- HTML TEMPLATES RENDERED INLINE FROM STRINGS ---
+BASE_HEAD = """
 <head>
     <meta charset="UTF-8">
-    <title>Python Flask Digital Storefront</title>
+    <title>{{ title }}</title>
     <script src="https://jsdelivr.net"></script>
 </head>
+"""
+
+STORE_HTML = """
+<!DOCTYPE html>
+<html lang="en">
+""" + BASE_HEAD + """
 <body class="bg-gray-50 text-gray-800 font-sans">
     <nav class="bg-slate-800 p-4 text-white flex justify-between items-center shadow-md">
         <h1 class="text-xl font-bold tracking-wide">🐍 Python Micro-Store</h1>
@@ -43,4 +65,138 @@
     </main>
 </body>
 </html>
+"""
 
+CART_HTML = """
+<!DOCTYPE html>
+<html lang="en">
+""" + BASE_HEAD + """
+<body class="bg-gray-50 text-gray-800 font-sans">
+    <nav class="bg-slate-800 p-4 text-white shadow-md">
+        <div class="max-w-6xl mx-auto"><a href="/" class="text-sm font-bold text-gray-300 hover:text-white transition">◀ Return to Storefront Catalog</a></div>
+    </nav>
+    <main class="max-w-4xl mx-auto mt-8 px-4">
+        <h2 class="text-3xl font-black mb-6 text-slate-900">Your Basket Summary</h2>
+        {% if not items %}
+            <div class="bg-white p-8 rounded-lg shadow-sm border text-center">
+                <p class="text-gray-500 text-lg">Your shopping cart inventory grid is empty.</p>
+                <a href="/" class="mt-4 inline-block bg-blue-600 text-white font-bold px-6 py-2 rounded-md hover:bg-blue-700 transition">Shop Products Now</a>
+            </div>
+        {% else %}
+            <div class="bg-white rounded-lg shadow-sm border overflow-hidden">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-100 text-xs font-bold text-gray-600 uppercase border-b">
+                            <th class="p-4">Item Product Info</th>
+                            <th class="p-4 text-right">Price</th>
+                            <th class="p-4 text-center">Qty</th>
+                            <th class="p-4 text-right">Subtotal</th>
+                            <th class="p-4"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y text-sm">
+                        {% for item in items %}
+                        <tr>
+                            <td class="p-4 font-bold text-gray-900">{{ item.name }}</td>
+                            <td class="p-4 text-right text-gray-600">₹{{ "{:,.2f}".format(item.price) }}</td>
+                            <td class="p-4 text-center font-semibold">{{ item.qty }}</td>
+                            <td class="p-4 text-right font-bold text-slate-900">₹{{ "{:,.2f}".format(item.total) }}</td>
+                            <td class="p-4 text-center">
+                                <form action="/remove_item/{{ item.id }}" method="POST">
+                                    <button type="submit" class="text-red-500 hover:text-red-700 text-xs font-bold uppercase tracking-wider cursor-pointer">Remove</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div class="p-6 bg-gray-50 border-t flex flex-col items-end">
+                    <p class="text-lg text-gray-600">Grand Total Invoice Balance:</p>
+                    <p class="text-3xl font-black text-slate-900 mt-1 mb-4">₹{{ "{:,.2f}".format(grand_total) }}</p>
+                    <form action="/checkout" method="POST">
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-extrabold px-8 py-3 rounded-md tracking-wide shadow-md transition cursor-pointer">💳 Complete Secure Checkout</button>
+                    </form>
+                </div>
+            </div>
+        {% endif %}
+    </main>
+</body>
+</html>
+"""
+
+# --- ROUTING CONTROLLERS ---
+@app.route("/")
+def index():
+    return render_template_string(STORE_HTML, title="Python Flask Digital Storefront", products=PRODUCTS)
+
+@app.route("/add_to_cart/<int:product_id>", methods=["POST"])
+def add_to_cart(product_id):
+    if product_id not in PRODUCTS:
+        flash("Product not found!", "error")
+        return redirect(url_for("index"))
+        
+    if "cart" not in session:
+        session["cart"] = {}
+        
+    cart = session["cart"]
+    product = PRODUCTS[product_id]
+    
+    current_qty = cart.get(str(product_id), 0)
+    if current_qty >= product["stock"]:
+        flash(f"Cannot add more units. Only {product['stock']} items available in stock!", "error")
+    else:
+        cart[str(product_id)] = current_qty + 1
+        session["cart"] = cart
+        flash(f"Added {product['name']} to your cart!", "success")
+        
+    return redirect(url_for("index"))
+
+@app.route("/cart")
+def view_cart():
+    cart_items = []
+    grand_total = 0.0
+    cart = session.get("cart", {})
+    
+    for prod_id_str, qty in cart.items():
+        p_id = int(prod_id_str)
+        if p_id in PRODUCTS:
+            product = PRODUCTS[p_id]
+            total_price = product["price"] * qty
+            grand_total += total_price
+            cart_items.append({
+                "id": p_id,
+                "name": product["name"],
+                "price": product["price"],
+                "qty": qty,
+                "total": total_price
+            })
+            
+    return render_template_string(CART_HTML, title="Shopping Cart Summary", items=cart_items, grand_total=grand_total)
+
+@app.route("/remove_item/<int:product_id>", methods=["POST"])
+def remove_item(product_id):
+    cart = session.get("cart", {})
+    if str(product_id) in cart:
+        del cart[str(product_id)]
+        session["cart"] = cart
+        flash("Item removed from shopping cart.", "info")
+    return redirect(url_for("view_cart"))
+
+@app.route("/checkout", methods=["POST"])
+def checkout():
+    cart = session.get("cart", {})
+    if not cart:
+        flash("Your shopping cart is empty!", "error")
+        return redirect(url_for("index"))
+        
+    for prod_id_str, qty in cart.items():
+        p_id = int(prod_id_str)
+        if p_id in PRODUCTS:
+            PRODUCTS[p_id]["stock"] -= qty
+            
+    session.pop("cart", None)
+    flash("📦 Order Placed Successfully! Your transaction invoice receipt has been compiled.", "success")
+    return redirect(url_for("index"))
+
+if __name__ == "__main__":
+    app.run(debug=True)
