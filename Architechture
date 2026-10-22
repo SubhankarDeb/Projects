@@ -1,1 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Python Flask Digital Storefront</title>
+    <script src="https://jsdelivr.net"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans">
+    <nav class="bg-slate-800 p-4 text-white flex justify-between items-center shadow-md">
+        <h1 class="text-xl font-bold tracking-wide">🐍 Python Micro-Store</h1>
+        <a href="/cart" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md font-semibold transition text-sm">🛒 View Cart</a>
+    </nav>
+    <main class="max-w-6xl mx-auto mt-8 px-4">
+        <!-- Message Alert Matrix Panel -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="mb-4 p-4 rounded-md text-sm {% if category == 'error' %}bg-red-100 text-red-700{% elif category == 'success' %}bg-green-100 text-green-700{% else %}bg-blue-100 text-blue-700{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <h2 class="text-2xl font-extrabold mb-6 text-slate-800">Featured Product Inventory</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {% for id, p in products.items() %}
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex flex-col justify-between">
+                <div>
+                    <span class="text-xs uppercase font-bold tracking-wider text-blue-500">{{ p.category }}</span>
+                    <h3 class="text-lg font-bold mt-1 mb-2 text-gray-900">{{ p.name }}</h3>
+                    <p class="text-2xl font-black text-slate-800">₹{{ "{:,.2f}".format(p.price) }}</p>
+                    <p class="text-xs text-gray-500 mt-1">Available Stock: <span class="font-bold">{{ p.stock }} units</span></p>
+                </div>
+                <form action="/add_to_cart/{{ id }}" method="POST" class="mt-5">
+                    <button type="submit" {% if p.stock <= 0 %}disabled{% endif %} class="w-full text-center bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 text-white font-semibold py-2 px-4 rounded-md transition text-sm cursor-pointer">
+                        {% if p.stock > 0 %}🛒 Add to Cart{% else %}🚫 Out of Stock{% endif %}
+                    </button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+</body>
+</html>
 
