@@ -1,1 +1,174 @@
+import tkinter as tk
+from tkinter import messagebox, ttk
+
+class ECommerceApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Python Mini E-Commerce System")
+        self.root.geometry("850x600")
+        self.root.resizable(False, False)
+        
+        # Product Catalog Data
+        self.products = [
+            {"id": 1, "name": "Wireless Headphones", "price": 4999.00, "category": "Electronics", "stock": 5},
+            {"id": 2, "name": "Mechanical Keyboard", "price": 3499.00, "category": "Electronics", "stock": 8},
+            {"id": 3, "name": "Ergonomic Office Chair", "price": 12499.00, "category": "Furniture", "stock": 3},
+            {"id": 4, "name": "Stainless Water Bottle", "price": 999.00, "category": "Lifestyle", "stock": 15},
+            {"id": 5, "name": "Leather Wallet", "price": 1499.00, "category": "Fashion", "stock": 12},
+            {"id": 6, "name": "Smart Fitness Watch", "price": 2999.00, "category": "Electronics", "stock": 6}
+        ]
+        
+        # Cart Data tracking: {product_id: quantity}
+        self.cart = {}
+        
+        self.setup_ui()
+        
+    def setup_ui(self):
+        # Main Header Banner
+        header = tk.Label(self.root, text="🐍 Python E-Commerce Storefront", font=("Arial", 18, "bold"), bg="#2c3e50", fg="white", pady=10)
+        header.pack(fill=tk.X)
+        
+        # Main Window Layout Frame
+        main_frame = tk.Frame(self.root, bg="#ecf0f1")
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        # LEFT PANE: Product Catalog List
+        left_pane = tk.LabelFrame(main_frame, text=" Product Catalog ", font=("Arial", 12, "bold"), padx=10, pady=10)
+        left_pane.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))
+        
+        # Product Interactive Table Grid
+        columns = ("id", "name", "category", "price", "stock")
+        self.prod_tree = ttk.Treeview(left_pane, columns=columns, show="headings", selectmode="browse")
+        
+        self.prod_tree.heading("id", text="ID")
+        self.prod_tree.heading("name", text="Product Name")
+        self.prod_tree.heading("category", text="Category")
+        self.prod_tree.heading("price", text="Price (INR)")
+        self.prod_tree.heading("stock", text="Stock Available")
+        
+        self.prod_tree.column("id", width=40, anchor=tk.CENTER)
+        self.prod_tree.column("name", width=180)
+        self.prod_tree.column("category", width=100)
+        self.prod_tree.column("price", width=90, anchor=tk.E)
+        self.prod_tree.column("stock", width=90, anchor=tk.CENTER)
+        
+        self.prod_tree.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+        self.populate_products()
+        
+        btn_add_to_cart = tk.Button(left_pane, text="🛒 Add Selected to Cart", font=("Arial", 11, "bold"), bg="#27ae60", fg="white", command=self.add_to_cart)
+        btn_add_to_cart.pack(fill=tk.X)
+        
+        # RIGHT PANE: Shopping Basket & Order Checkout
+        right_pane = tk.LabelFrame(main_frame, text=" Shopping Cart ", font=("Arial", 12, "bold"), padx=10, pady=10)
+        right_pane.pack(side=tk.RIGHT, fill=tk.BOTH, padx=(5, 0))
+        
+        # Current Cart Summary Table Grid
+        cart_columns = ("name", "price", "qty", "total")
+        self.cart_tree = ttk.Treeview(right_pane, columns=cart_columns, show="headings", selectmode="browse")
+        
+        self.cart_tree.heading("name", text="Item Summary")
+        self.cart_tree.heading("price", text="Price")
+        self.cart_tree.heading("qty", text="Qty")
+        self.cart_tree.heading("total", text="Total")
+        
+        self.cart_tree.column("name", width=140)
+        self.cart_tree.column("price", width=70, anchor=tk.E)
+        self.cart_tree.column("qty", width=40, anchor=tk.CENTER)
+        self.cart_tree.column("total", width=80, anchor=tk.E)
+        
+        self.cart_tree.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+        
+        # Billing Metrics & System Buttons
+        self.lbl_total = tk.Label(right_pane, text="Total Bill: ₹0.00", font=("Arial", 13, "bold"), anchor=tk.E)
+        self.lbl_total.pack(fill=tk.X, pady=5)
+        
+        btn_remove = tk.Button(right_pane, text="❌ Remove Single Unit", font=("Arial", 10), bg="#e74c3c", fg="white", command=self.remove_from_cart)
+        btn_remove.pack(fill=tk.X, pady=2)
+        
+        btn_checkout = tk.Button(right_pane, text="💳 Proceed to Checkout", font=("Arial", 12, "bold"), bg="#2980b9", fg="white", command=self.checkout)
+        btn_checkout.pack(fill=tk.X, pady=(10, 0))
+        
+    def populate_products(self):
+        for item in self.prod_tree.get_children():
+            self.prod_tree.delete(item)
+        for p in self.products:
+            self.prod_tree.insert("", tk.END, values=(p["id"], p["name"], p["category"], f"₹{p['price']:.2f}", p["stock"]))
+
+    def update_cart_display(self):
+        for item in self.cart_tree.get_children():
+            self.cart_tree.delete(item)
+            
+        grand_total = 0.0
+        for p_id, qty in self.cart.items():
+            product = next(p for p in self.products if p["id"] == p_id)
+            item_total = product["price"] * qty
+            grand_total += item_total
+            self.cart_tree.insert("", tk.END, values=(product["name"], f"₹{product['price']:.2f}", qty, f"₹{item_total:.2f}"))
+            
+        self.lbl_total.config(text=f"Total Bill: ₹{grand_total:.2f}")
+
+    def add_to_cart(self):
+        selected_item = self.prod_tree.selection()
+        if not selected_item:
+            messagebox.showwarning("Selection Error", "Please select a product from the catalog to add.")
+            return
+            
+        values = self.prod_tree.item(selected_item, "values")
+        p_id = int(values[0])
+        product = next(p for p in self.products if p["id"] == p_id)
+        
+        # Real-time stock reservation calculations
+        current_in_cart = self.cart.get(p_id, 0)
+        if current_in_cart >= product["stock"]:
+            messagebox.showerror("Out of Stock", f"Sorry, only {product['stock']} units of '{product['name']}' are currently available.")
+            return
+            
+        self.cart[p_id] = current_in_cart + 1
+        self.update_cart_display()
+
+    def remove_from_cart(self):
+        selected_item = self.cart_tree.selection()
+        if not selected_item:
+            messagebox.showwarning("Selection Error", "Please select an item from your shopping cart to decrease.")
+            return
+            
+        values = self.cart_tree.item(selected_item, "values")
+        item_name = values[0]
+        product = next(p for p in self.products if p["name"] == item_name)
+        p_id = product["id"]
+        
+        if p_id in self.cart:
+            if self.cart[p_id] > 1:
+                self.cart[p_id] -= 1
+            else:
+                del self.cart[p_id]
+                
+        self.update_cart_display()
+
+    def checkout(self):
+        if not self.cart:
+            messagebox.showwarning("Empty Cart", "Your shopping cart is empty. Add products before checking out!")
+            return
+            
+        receipt_details = "🧾 --- PURCHASE INVOICE RECEIPT ---\n\n"
+        grand_total = 0.0
+        
+        for p_id, qty in self.cart.items():
+            product = next(p for p in self.products if p["id"] == p_id)
+            product["stock"] -= qty  # Inventory updates
+            item_total = product["price"] * qty
+            grand_total += item_total
+            receipt_details += f"• {product['name']} x{qty} -> ₹{item_total:.2f}\n"
+            
+        receipt_details += f"\n---------------------------------------\n💰 Total Amount Paid: ₹{grand_total:.2f}\n\nThank you for shopping with us!"
+        
+        messagebox.showinfo("Order Placed Successfully", receipt_details)
+        self.cart.clear()
+        self.update_cart_display()
+        self.populate_products()
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = ECommerceApp(root)
+    root.mainloop()
 
