@@ -1,1 +1,192 @@
+import tkinter as tk
+from tkinter import messagebox, ttk
+
+class PortfolioApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Developer Portfolio Dashboard")
+        self.root.geometry("800x600")
+        self.root.resizable(False, False)
+        
+        # Define Color Palette
+        self.primary_color = "#2c3e50"     # Dark Slate Blue
+        self.secondary_color = "#3498db"   # Bright Blue
+        self.accent_color = "#2ecc71"      # Emerald Green
+        self.bg_light = "#f8f9fa"          # Off-white
+        self.text_dark = "#2c3e50"
+        
+        self.setup_styles()
+        self.setup_ui()
+        
+    def setup_styles(self):
+        self.style = ttk.Style()
+        self.style.theme_use('clam')
+        
+        # Configure Tab Notebook Styles
+        self.style.configure("TNotebook", background=self.bg_light, padding=5)
+        self.style.configure("TNotebook.Tab", font=("Arial", 11, "bold"), padding=[15, 5])
+        self.style.map("TNotebook.Tab", 
+                       background=[("selected", self.primary_color), ("!selected", "#dcdde1")],
+                       foreground=[("selected", "white"), ("!selected", self.text_dark)])
+                       
+        # Configure Progress Bar for Skills
+        self.style.configure("Skills.Horizontal.TProgressbar", thickness=15, troughcolor="#dcdde1", background=self.secondary_color)
+
+    def setup_ui(self):
+        # Header Header Profile Summary Banner
+        header_frame = tk.Frame(self.root, bg=self.primary_color, pady=20)
+        header_frame.pack(fill=tk.X)
+        
+        lbl_name = tk.Label(header_frame, text="Alex Mercer", font=("Arial", 24, "bold"), fg="white", bg=self.primary_color)
+        lbl_name.pack()
+        
+        lbl_title = tk.Label(header_frame, text="Full-Stack Software Engineer & Python Architect", font=("Arial", 12, "italic"), fg="#b2bec3", bg=self.primary_color)
+        lbl_title.pack(pady=(2, 0))
+
+        # Main Tab Navigation Controller
+        notebook = ttk.Notebook(self.root)
+        notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        # Tab Creation
+        tab_about = tk.Frame(notebook, bg=self.bg_light)
+        tab_projects = tk.Frame(notebook, bg=self.bg_light)
+        tab_skills = tk.Frame(notebook, bg=self.bg_light)
+        tab_contact = tk.Frame(notebook, bg=self.bg_light)
+        
+        notebook.add(tab_about, text="🙋‍♂️ About Me")
+        notebook.add(tab_projects, text="💻 Projects")
+        notebook.add(tab_skills, text="📊 Skills Matrix")
+        notebook.add(tab_contact, text="✉️ Contact")
+        
+        # Populate Tabs
+        self.build_about_tab(tab_about)
+        self.build_projects_tab(tab_projects)
+        self.build_skills_tab(tab_skills)
+        self.build_contact_tab(tab_contact)
+
+    def build_about_tab(self, frame):
+        inner_frame = tk.Frame(frame, bg=self.bg_light, padx=20, pady=20)
+        inner_frame.pack(fill=tk.BOTH, expand=True)
+        
+        heading = tk.Label(inner_frame, text="Professional Summary", font=("Arial", 16, "bold"), fg=self.primary_color, bg=self.bg_light)
+        heading.pack(anchor=tk.W, pady=(0, 10))
+        
+        bio_text = (
+            "Hi! I am a passionate software developer specializing in building scalable backend engines, "
+            "interactive desktop automation systems, and fluid modern web architectures. With over 4 years of "
+            "industry experience, I transform intricate architectural algorithms into clean, robust, readable code.\n\n"
+            "Driven by structural efficiency, open-source architectures, and continuous performance optimization."
+        )
+        lbl_bio = tk.Label(inner_frame, text=bio_text, font=("Arial", 11), fg="#57606f", bg=self.bg_light, justify=tk.LEFT, wraplength=720)
+        lbl_bio.pack(anchor=tk.W, pady=(0, 25))
+        
+        # Quick Facts GroupBox
+        facts_box = tk.LabelFrame(inner_frame, text=" Core Timeline Metrics ", font=("Arial", 11, "bold"), bg=self.bg_light, fg=self.primary_color, padx=15, pady=15)
+        facts_box.pack(fill=tk.X)
+        
+        facts = [
+            ("📍 Location:", "Howrah, West Bengal, India"),
+            ("🎓 Education:", "B.Tech in Computer Science & Engineering"),
+            ("💼 Status:", "Available for freelance contracts & remote work"),
+            ("🚀 Focus Areas:", "Microservices API, GUI Tooling, Data Engineering")
+        ]
+        
+        for label, val in facts:
+            row = tk.Frame(facts_box, bg=self.bg_light, pady=4)
+            row.pack(fill=tk.X)
+            tk.Label(row, text=label, font=("Arial", 10, "bold"), bg=self.bg_light, width=15, anchor=tk.W).pack(side=tk.LEFT)
+            tk.Label(row, text=val, font=("Arial", 10), bg=self.bg_light, fg="#2f3542").pack(side=tk.LEFT)
+
+    def build_projects_tab(self, frame):
+        # Left side panel: interactive list
+        left_frame = tk.Frame(frame, width=250, bg="#f1f2f6", bd=1, relief=tk.SOLID)
+        left_frame.pack(side=tk.LEFT, fill=tk.Y, padx=10, pady=15)
+        left_frame.pack_propagate(False)
+        
+        tk.Label(left_frame, text="Project Showroom", font=("Arial", 11, "bold"), bg="#f1f2f6", fg=self.primary_color).pack(pady=10)
+        
+        self.project_data = {
+            "🛒 Mini E-Commerce System": {
+                "tech": "Python / Tkinter / SQLite",
+                "desc": "A complete desktop storefront tracking live user balances, transactional checkouts, dynamic inventory rows, and receipt generation popups."
+            },
+            "🎮 Ultimate Tic-Tac-Toe AI": {
+                "tech": "Python / Minimax Algorithm",
+                "desc": "An interactive tactical board game implementation integrating standard grid logic paired with a highly intelligent minimax-driven computer opponent."
+            },
+            "📊 Data Visualization Engine": {
+                "tech": "Python / Matplotlib / Pandas",
+                "desc": "A data analytics application parsing systemic file streams to auto-compile interactive trendlines, metrics summaries, and statistical graphs."
+            }
+        }
+        
+        self.proj_listbox = tk.Listbox(left_frame, font=("Arial", 10), bd=0, selectbackground=self.secondary_color)
+        for proj in self.project_data.keys():
+            self.proj_listbox.insert(tk.END, proj)
+        self.proj_listbox.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        self.proj_listbox.bind("<<ListboxSelect>>", self.display_project_details)
+        
+        # Right side panel: contextual display details 
+        self.right_frame = tk.LabelFrame(frame, text=" Select a project to view blueprint info ", font=("Arial", 11, "italic"), bg=self.bg_light, padx=15, pady=15)
+        self.right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=10, pady=15)
+        
+        self.lbl_p_title = tk.Label(self.right_frame, text="", font=("Arial", 14, "bold"), fg=self.secondary_color, bg=self.bg_light)
+        self.lbl_p_title.pack(anchor=tk.W, pady=(0, 5))
+        
+        self.lbl_p_tech = tk.Label(self.right_frame, text="", font=("Arial", 10, "bold"), fg="#747d8c", bg=self.bg_light)
+        self.lbl_p_tech.pack(anchor=tk.W, pady=(0, 15))
+        
+        self.lbl_p_desc = tk.Label(self.right_frame, text="", font=("Arial", 11), bg=self.bg_light, fg=self.text_dark, justify=tk.LEFT, wraplength=450)
+        self.lbl_p_desc.pack(anchor=tk.W)
+        
+        # Select first item by default if available
+        if self.project_data:
+            self.proj_listbox.selection_set(0)
+            self.display_project_details(None)
+
+    def display_project_details(self, event):
+        selection = self.proj_listbox.curselection()
+        if not selection:
+            return
+        key = self.proj_listbox.get(selection[0])
+        details = self.project_data[key]
+        
+        self.right_frame.config(text=" Engineering Specifications ", font=("Arial", 11, "bold"))
+        self.lbl_p_title.config(text=key)
+        self.lbl_p_tech.config(text=f"🛠️ Built With: {details['tech']}")
+        self.lbl_p_desc.config(text=details['desc'])
+
+    def build_skills_tab(self, frame):
+        inner_frame = tk.Frame(frame, bg=self.bg_light, padx=20, pady=20)
+        inner_frame.pack(fill=tk.BOTH, expand=True)
+        
+        tk.Label(inner_frame, text="Technical Proficiency Levels", font=("Arial", 14, "bold"), fg=self.primary_color, bg=self.bg_light).pack(anchor=tk.W, pady=(0, 15))
+        
+        skills = [
+            ("Python Core Programming & Automation", 95),
+            ("GUI Design Frameworks (Tkinter, CustomTkinter)", 85),
+            ("Database Engineering (SQLite, PostgreSQL)", 80),
+            ("Web Frameworks (Flask, FastAPI Architecture)", 75),
+            ("Data Structures, Matrices, & Analytics algorithms", 70)
+        ]
+        
+        for name, value in skills:
+            container = tk.Frame(inner_frame, bg=self.bg_light, pady=8)
+            container.pack(fill=tk.X)
+            
+            lbl_info = tk.Frame(container, bg=self.bg_light)
+            lbl_info.pack(fill=tk.X)
+            
+            tk.Label(lbl_info, text=name, font=("Arial", 10, "bold"), bg=self.bg_light, fg=self.text_dark).pack(side=tk.LEFT)
+            tk.Label(lbl_info, text=f"{value}%", font=("Arial", 10, "bold"), bg=self.bg_light, fg=self.secondary_color).pack(side=tk.RIGHT)
+            
+            pb = ttk.Progressbar(container, style="Skills.Horizontal.TProgressbar", maximum=100)
+            pb.pack(fill=tk.X, pady=(2, 0))
+            pb['value'] = value
+
+    def build_contact_tab(self, frame):
+        inner_frame = tk.Frame(frame, bg=self.bg_light, padx=30, pady=25)
+        inner_frame.pack(fill=tk.BOTH, expand=True)
+        
+        tk.Label(inner_frame, text="Get In Touch", font=("Arial", 14, "bold"), fg=self.primary_color, bg=self.bg_light).pack(anchor=tk.W, pady=(0, 2))
 
